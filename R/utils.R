@@ -286,10 +286,7 @@ wileyto_score <- function(data) {
   
 }
 
-kinley_score <- function(data) {
-  
-}
-
+#' @export
 delwise_consistencies <- function(data) {
   
   require_columns(data, c('val_del', 'val_imm', 'imm_chosen', 'del'))
@@ -297,7 +294,7 @@ delwise_consistencies <- function(data) {
   data$val_rel <- data$val_imm / data$val_del
   
   rows <- by(data, data$del, function(sdf) {
-    sdf <- sdf[order(sdf$val_rel), ]
+    sdf <- sdf[order(sdf$val_rel, decreasing = T), ]
     sdf$consistency <- sapply(1:nrow(sdf), function(idx) {
       mean(c(sdf$imm_chosen[0:(idx-1)],
              !sdf$imm_chosen[(idx):(nrow(sdf)+1)]),

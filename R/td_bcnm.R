@@ -44,10 +44,12 @@ td_bcnm <- function(
     choice_rule = c('logistic', 'probit', 'power'),
     fixed_ends = F,
     fit_err_rate = F,
+    fit_bias = F,
     # robust = F,
     # param_ranges = NULL,
     gamma_par_starts = c(0.01, 1, 100),
     eps_par_starts = c(0.01, 0.25),
+    bias_par_starts = c(-0.1, 0, 0.1),
     silent = T,
     optim_args = list(),
     na.action = na.omit,
@@ -125,7 +127,8 @@ td_bcnm <- function(
   args <- c(
     config,
     list(
-      fit_err_rate = fit_err_rate
+      fit_err_rate = fit_err_rate,
+      fit_bias = fit_bias
     )
   )
   
@@ -187,6 +190,15 @@ td_bcnm <- function(
         )
       )
     }
+    # Same for bias
+    if (config$fit_bias) {
+      par_starts <- c(
+        par_starts,
+        list(
+          bias = bias_par_starts
+        )
+      )
+    }
     
     # Get parameter bounds
     if (is.function(config$discount_function$par_lims)) {
@@ -207,6 +219,15 @@ td_bcnm <- function(
         par_lims,
         list(
           eps = c(0, 0.5)
+        )
+      )
+    }
+    # Same for bias
+    if (config$fit_bias) {
+      par_lims <- c(
+        par_lims,
+        list(
+          bias = c(-Inf, Inf)
         )
       )
     }
@@ -258,9 +279,15 @@ get_score_func_frame <- function(...) {
                         'none' = function(data, par) 1,
                         'linear' = function(data, par) data$val_del)
   
+  if (args$fit_bias) {
+    bias <- function(par) {par['bias']}
+  } else {
+    bias <- function(par) {0}
+  }
+  
   # Get the final frame
   frame <- function(data, par) {
-    par['gamma'] * gamma_scale(data, par) * delta(data, par)}
+    par['gamma'] * gamma_scale(data, par) * delta(data, par)} + bias(par)
   
   return(frame)
   
